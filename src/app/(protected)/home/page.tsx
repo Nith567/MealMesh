@@ -158,7 +158,7 @@ function HomePage({
         </Typography>
 
         <Typography variant="body" level={3} className="text-gray-400" style={{ maxWidth: '85%' }}>
-          Home-cooked meals by real, verified people — near you or worldwide.
+          Discover Restaurants dining meals by real, verified people — near you or worldwide while you travel.
         </Typography>
 
         {/* Stat pills */}
@@ -208,7 +208,7 @@ function HomePage({
               </span>
             </div>
             <button
-              className="rounded-full px-3 py-1.5 flex-shrink-0"
+              className="rounded-full px-4 py-3 flex-shrink-0"
               style={{ background: 'rgb(var(--warning-600))', color: 'white', fontSize: '0.75rem', fontWeight: 600 }}
             >
               Verify
@@ -285,12 +285,10 @@ function HomePage({
 
         <div className="grid grid-cols-2 gap-2">
           {[
-            { icon: '🔒', label: 'Blockchain secured', bg: 'rgb(var(--info-100))', border: 'rgb(var(--info-200))' },
+            { icon: '🔒', label: 'Transparent', bg: 'rgb(var(--info-100))', border: 'rgb(var(--info-200))' },
             { icon: '✅', label: 'Verified users',      bg: 'rgb(var(--success-100))', border: 'rgb(var(--success-200))' },
             { icon: '📍', label: 'Location based',      bg: 'rgb(var(--warning-100))', border: 'rgb(var(--warning-200))' },
-            { icon: '💰', label: 'Fair WLD pricing',    bg: 'rgb(var(--gray-50))',     border: 'rgb(var(--gray-200))' },
             { icon: '🌍', label: 'Global community',    bg: 'rgb(var(--info-100))',    border: 'rgb(var(--info-200))' },
-            { icon: '⭐', label: 'Community reviews',   bg: 'rgb(var(--warning-100))', border: 'rgb(var(--warning-200))' },
           ].map((f) => (
             <div
               key={f.label}
