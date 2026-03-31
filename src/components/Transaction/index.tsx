@@ -501,33 +501,38 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
           addLog(`✅ STEP 3 COMPLETE: Guest added to meal with confirmed transaction`);
           addLog(`📝 Database response: ${JSON.stringify(dbData)}`);
           
-          // STEP 4: Send chat message to host
-          addLog('⏳ STEP 4: Sending notification chat to host...');
+          // STEP 4: Send chat message to host (with 1.5 second delay)
+          addLog('⏳ STEP 4: Opening chat with host in 1.5 seconds...');
+          
+          // Wait 1.5 seconds before opening chat for better UX
+          await new Promise(r => setTimeout(r, 1500));
           
           try {
-            if (MiniKit.isInstalled()) {
-              addLog(`📱 Opening chat with host: ${joinData.hostUsername}`);
-              
-              // Open World profile chat link
-              window.open(
-                `https://world.org/profile?username=${joinData.hostUsername}&action=chat`,
-                '_blank'
-              );
+            addLog(`📱 Opening chat window with host: ${joinData.hostUsername}`);
+            
+            // Open World profile chat link - works regardless of MiniKit installation
+            window.open(
+              `https://world.org/profile?username=${joinData.hostUsername}&action=chat`,
+              '_blank'
+            );
 
-              addLog('✅ STEP 4 COMPLETE: Chat window opened to host!');
-              
-              // Show success toast
-              toast.success({
-                title: '✅ Successfully Joined Meal!',
-                description: `You've joined the meal at ${joinData.restaurant}. Chat window opened to host!`,
-                duration: 4000,
-              });
-            } else {
-              addLog('⚠️ STEP 4 WARNING: MiniKit not installed, skipping chat');
-            }
+            addLog('✅ STEP 4 COMPLETE: Chat window opened to host!');
+            
+            // Show success toast
+            toast.success({
+              title: '✅ Successfully Joined Meal!',
+              description: `You've joined the meal at ${joinData.restaurant}. Chat window opened to host!`,
+              duration: 4000,
+            });
           } catch (chatError) {
             console.error('[TRANSACTION] Chat error:', chatError);
             addLog('⚠️ STEP 4 WARNING: Chat error, but meal join was successful');
+            // Still show success even if chat fails
+            toast.success({
+              title: '✅ Successfully Joined Meal!',
+              description: `You've joined the meal at ${joinData.restaurant}. You can find the host in your messages!`,
+              duration: 4000,
+            });
           }
 
           addLog('✅✅✅ ALL STEPS COMPLETE - SUCCESSFULLY JOINED MEAL! ✅✅✅');
