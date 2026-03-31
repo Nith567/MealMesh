@@ -69,6 +69,7 @@ export const BrowseMeals = ({
   const [userLocation, setUserLocation] = useState({ latitude: 0, longitude: 0 });
   const [selectedCuisine, setSelectedCuisine] = useState<string | undefined>(undefined);
   const [sortBy, setSortBy] = useState<SortOption>('closest');
+  const [radiusKm, setRadiusKm] = useState(50);
   const [isVerified, setIsVerified] = useState(verified || false);
 
   useEffect(() => {
@@ -80,7 +81,7 @@ export const BrowseMeals = ({
     );
   }, []);
 
-  useEffect(() => { fetchMeals(); }, [mode, selectedCuisine]);
+  useEffect(() => { fetchMeals(); }, [mode, selectedCuisine, radiusKm]);
 
   const fetchMeals = async () => {
     setLoading(true);
@@ -98,7 +99,7 @@ export const BrowseMeals = ({
                 action: 'nearby',
                 latitude: latitude.toString(),
                 longitude: longitude.toString(),
-                radiusKm: '50',
+                radiusKm: radiusKm.toString(),
                 ...(selectedCuisine && { cuisine: selectedCuisine }),
               });
               const res = await fetch(`/api/browse-meals?${params}`);
@@ -232,13 +233,35 @@ export const BrowseMeals = ({
         )}
       </div>
 
+      {/* ── Radius Toggle (Near Me Mode) ──────────────────────── */}
+      {mode === 'nearby' && (
+        <div className="flex gap-2 px-6 mt-3">
+          {[50, 100, 200].map((km) => (
+            <button
+              key={km}
+              onClick={() => setRadiusKm(km)}
+              className="flex-1 rounded-xl py-2 transition-all active:scale-[0.97]"
+              style={{
+                background: radiusKm === km ? 'rgb(var(--info-600))' : 'rgb(var(--gray-100))',
+                color: radiusKm === km ? 'rgb(var(--gray-0))' : 'rgb(var(--gray-500))',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                border: 'none',
+              }}
+            >
+              {km}km
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* ── Count bar ─────────────────────────────────────────── */}
       {!loading && meals.length > 0 && (
         <div className="px-6 mt-4">
           <Typography variant="body" level={4} className="text-gray-400">
             {meals.length} meal{meals.length !== 1 ? 's' : ''} found
             {selectedCuisine ? ` · ${selectedCuisine}` : ''}
-            {mode === 'nearby' ? ' · within 50km' : ''}
+            {mode === 'nearby' ? ` · within ${radiusKm}km` : ''}
           </Typography>
         </div>
       )}
