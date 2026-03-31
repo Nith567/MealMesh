@@ -72,6 +72,46 @@ You browse meals freely and choose who to join. Timeleft controls matching via p
 
 **"Social dining without the middleman. Every meal is verified by real humans, every transaction is transparent on-chain, and it costs almost nothing. Timeleft, EatWith, and others charge 100-1000x more while gatekeeping your choices and hiding their payment systems. We're keeping it simple: trustless, cheap, and human-verified."**
 
+## The Broken Status Quo
+
+Existing social dining apps promise genuine human connection but charge a premium:
+
+- **Timeleft**: $20–40+ per dinner, algorithmic gatekeeping, zero proof users are real
+- **EatWith**: $30–150+ per experience, host-curated only, feels like paying for a restaurant not making friends
+- **Meal & Mates**: Similar pricing, same opacity, same trust issues
+
+**The Problem**: These platforms take heavy cuts, hide their fee structures, and users have zero visibility into where money actually goes. You're overpaying just to meet strangers over food. Plus — no one can verify the users are actually real.
+
+**MealMesh's Answer**: 0.001 WLD (~$0.001) platform fee. Transparent on-chain payments. Every user World ID verified. Control over who you meet. No gatekeeping. No hidden cuts.
+
+## 📈 Market Opportunity
+
+- **Global social dining market**: $10B+ and growing
+- **Decentralized peer-to-peer platforms**: Growing 40% YoY
+- **World ID adoption**: 10M+ verified users and growing rapidly
+- **Low barrier to entry**: Minimal fees make adoption frictionless
+
+The timing is perfect. Traditional apps have trained users to pay $20-150 per meal. MealMesh offers the same experience at 1/10,000th the cost. That's a 10,000x value improvement. At scale, even a tiny fee per transaction generates significant revenue while remaining accessible globally.
+
+## 💰 Business Model
+
+**Revenue Model:**
+- **Platform fee**: 0.001 WLD per transaction (charged to both host & guest)
+- **Scaling**: Revenue grows directly with meal volume
+- **Unit economics**: Minimal infrastructure costs (blockchain-native, no payment processor cuts)
+
+**Future Revenue Streams:**
+- **Verified Host Badges**: Hosts pay small fee for "trusted" badge (increased bookings)
+- **Analytics Dashboard**: Hosts get insights on guest preferences, booking patterns
+- **Premium Listings**: Featured meal placement for premium pricing
+- **Reputation NFTs**: Collectible badges for milestone meals hosted/joined
+
+**Why This Works:**
+1. Competitors take 20-40% cuts per transaction — MealMesh takes 0.001 WLD (essentially free)
+2. At scale, even tiny fees add up (1M meals/month × 0.001 WLD = significant revenue)
+3. Users save so much money they'll eagerly pay for premium features
+4. On-chain transparency = users trust the model and adoption accelerates
+
 ## Getting Started
 
 1. cp .env.example .env.local
