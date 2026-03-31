@@ -172,51 +172,72 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
       addLog(`📊 RAW: ${JSON.stringify(rawResponse)}`);
       console.log('[TRANSACTION] RAW RESPONSE:', rawResponse);
 
-      // The response structure is: { executedWith, data: { status, transactionId, transaction_id, ... } }
+      // The response structure is: { executedWith, data: { status, userOpHash, transaction_id, ... } }
       const data = rawResponse?.data;
       const status = data?.status;
-      const txId = data?.transaction_id;
+      const userOpHash = data?.userOpHash;
 
-      addLog(`Status: ${status}, TxId: ${txId}`);
+      addLog(`Status: ${status}, UserOpHash: ${userOpHash}`);
 
-      if (status === 'success' && txId) {
-        addLog('✅ STEP 2 COMPLETE: Smart contract transaction successful!');
-        addLog(`Transaction ID: ${txId}`);
+      if (status === 'success' && userOpHash) {
+        addLog('✅ STEP 2 COMPLETE: Transaction sent to chain!');
+        addLog(`UserOpHash: ${userOpHash}`);
         
-        // STEP 3: Update database with transaction ID
-        addLog('⏳ STEP 3: Updating database with transaction ID...');
+        // STEP 3: Verify transaction is confirmed on-chain
+        addLog('⏳ STEP 3: Verifying transaction confirmation...');
+        addLog(`Polling World API for userOpHash: ${userOpHash}`);
         
-        const updateResponse = await fetch(`/api/update-meal/${realMealId}`, {
-          method: 'PATCH',
+        const verifyResponse = await fetch('/api/verify-transaction', {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ transactionId: txId }),
+          body: JSON.stringify({ userOpHash }),
         });
 
-        addLog(`Update response status: ${updateResponse.status}`);
-        const updateText = await updateResponse.text();
-        addLog(`Update response text: ${updateText.substring(0, 200)}`);
-        
-        let updateData;
-        try {
-          updateData = JSON.parse(updateText);
-        } catch (e) {
-          throw new Error(`Failed to parse update response: ${updateText.substring(0, 200)}`);
-        }
-        
-        if (updateData.success || updateData.meal) {
-          addLog('✅ STEP 3 COMPLETE: Meal updated with transaction ID!');
-          addLog('✅✅✅ ALL STEPS COMPLETE - MEAL CREATION SUCCESSFUL! ✅✅✅');
-          setButtonState('success');
-          setTxHash(txId);
+        addLog(`Verification response status: ${verifyResponse.status}`);
+        const verifyData = await verifyResponse.json();
+        addLog(`Verification response: ${JSON.stringify(verifyData)}`);
+
+        if (verifyData.success && verifyData.status === 'confirmed') {
+          addLog('✅ STEP 3 COMPLETE: Transaction confirmed on-chain!');
+          addLog(`Transaction hash: ${verifyData.transactionHash}`);
           
-          // Dispatch success event for CreateMeal component
-          window.dispatchEvent(new CustomEvent('mealCreatedSuccess', { detail: { mealId: realMealId } }));
+          // STEP 4: Update database with confirmed transaction hash
+          addLog('⏳ STEP 4: Updating database with confirmed transaction hash...');
           
-          if (onMealCreated) {
-            onMealCreated(realMealId);
+          const updateResponse = await fetch(`/api/update-meal/${realMealId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transactionId: verifyData.transactionHash }),
+          });
+
+          addLog(`Update response status: ${updateResponse.status}`);
+          const updateText = await updateResponse.text();
+          addLog(`Update response text: ${updateText.substring(0, 200)}`);
+          
+          let updateData;
+          try {
+            updateData = JSON.parse(updateText);
+          } catch (e) {
+            throw new Error(`Failed to parse update response: ${updateText.substring(0, 200)}`);
+          }
+          
+          if (updateData.success || updateData.meal) {
+            addLog('✅ STEP 4 COMPLETE: Meal updated with confirmed transaction hash!');
+            addLog('✅✅✅ ALL STEPS COMPLETE - MEAL CREATION SUCCESSFUL! ✅✅✅');
+            setButtonState('success');
+            setTxHash(verifyData.transactionHash);
+            
+            // Dispatch success event for CreateMeal component
+            window.dispatchEvent(new CustomEvent('mealCreatedSuccess', { detail: { mealId: realMealId } }));
+            
+            if (onMealCreated) {
+              onMealCreated(realMealId);
+            }
+          } else {
+            throw new Error(updateData.error || 'Failed to update meal with transaction hash');
           }
         } else {
-          throw new Error(updateData.error || 'Failed to update meal with transaction ID');
+          throw new Error(verifyData.error || 'Transaction verification failed');
         }
 
       } else if (status === 'error') {
@@ -233,6 +254,13 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
       addLog(`❌ ERROR: ${errorMsg}`);
       setButtonState('failed');
       setDemoError(errorMsg);
+      
+      // Show error toast for CREATE MEAL
+      toast.error({
+        title: '❌ Meal Creation Failed',
+        description: errorMsg,
+        duration: 4000,
+      });
     } finally {
       // Safety net — if somehow buttonState never updated
       setButtonState(prev => prev === 'pending' ? 'failed' : prev);
@@ -534,6 +562,13 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
       addLog(`❌ ERROR: ${errorMsg}`);
       setButtonState('failed');
       setDemoError(errorMsg);
+      
+      // Show error toast for JOIN MEAL
+      toast.error({
+        title: '❌ Failed to Join Meal',
+        description: errorMsg,
+        duration: 4000,
+      });
     } finally {
       // Safety net — if somehow buttonState never updated
       setButtonState(prev => prev === 'pending' ? 'failed' : prev);
