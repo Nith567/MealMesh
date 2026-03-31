@@ -2,9 +2,9 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ['static.usernames.app-backend.toolsforhumanity.com', 'https://f731-2a09-bac1-36e0-1468-00-1c5-52.ngrok-free.app'],
+    domains: ['static.usernames.app-backend.toolsforhumanity.com', 'https://meal-mesh.vercel.app'],
   },
-  allowedDevOrigins: ['https://f731-2a09-bac1-36e0-1468-00-1c5-52.ngrok-free.app'],
+  allowedDevOrigins: ['https://meal-mesh.vercel.app'],
   reactStrictMode: false,
   webpack: (config, { isServer }) => {
     if (!isServer) {
