@@ -357,39 +357,8 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
       setButtonState('pending');
       setStepLogs([]);
 
-      // STEP 1: Update database to add guest to meal
-      addLog('⏳ STEP 1: Adding guest to meal in database...');
-      
-      const dbPayload = {
-        mealId: joinData.mealId,
-        userId: joinData.guestId,
-        username: joinData.guestUsername,
-        transactionId: `pending_${Date.now()}`,  // Temporary ID, will be updated after smart contract
-      };
-
-      console.log('[TRANSACTION] Joining meal with data:', dbPayload);
-      addLog('Sending to /api/join-meal...');
-      
-      const dbResponse = await fetch('/api/join-meal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dbPayload),
-      });
-
-      addLog(`Database response status: ${dbResponse.status}`);
-      const dbData = await dbResponse.json();
-      addLog(`Database response received: ${JSON.stringify(dbData)}`);
-      
-      if (!dbData.success) {
-        addLog(`❌ STEP 1 FAILED: Database response error`);
-        throw new Error(dbData.error || 'Failed to join meal in database');
-      }
-
-      addLog(`✅ STEP 1 COMPLETE: Guest added to meal`);
-      addLog(`📝 Database response: ${JSON.stringify(dbData)}`);
-
-      // STEP 2: Call smart contract with meal ID (joinMeal function)
-      addLog('⏳ STEP 2: Calling smart contract to confirm participation...');
+      // STEP 1: Call smart contract with meal ID (joinMeal function)
+      addLog('⏳ STEP 1: Calling smart contract to confirm participation...');
       
       const username = session?.user?.username;
       if (!username) {
@@ -451,42 +420,65 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
       addLog(`📊 RAW: ${JSON.stringify(rawResponse)}`);
       console.log('[TRANSACTION] RAW RESPONSE:', rawResponse);
 
-      // The response structure is: { executedWith, data: { status, transactionId, transaction_id, ... } }
+      // The response structure is: { executedWith, data: { status, userOpHash, transaction_id, ... } }
       const data = rawResponse?.data;
       const status = data?.status;
-      const txId = data?.transaction_id;
+      const userOpHash = data?.userOpHash;
 
-      addLog(`Status: ${status}, TxId: ${txId}`);
+      addLog(`Status: ${status}, UserOpHash: ${userOpHash}`);
 
-      if (status === 'success' && txId) {
-        addLog('✅ STEP 2 COMPLETE: Smart contract transaction successful!');
-        addLog(`Transaction ID: ${txId}`);
+      if (status === 'success' && userOpHash) {
+        addLog('✅ STEP 1 COMPLETE: Transaction sent to chain!');
+        addLog(`UserOpHash: ${userOpHash}`);
         
-        // STEP 3: Update database with transaction ID
-        addLog('⏳ STEP 3: Updating database with transaction ID...');
+        // STEP 2: Verify transaction is confirmed on-chain
+        addLog('⏳ STEP 2: Verifying transaction confirmation...');
+        addLog(`Polling World API for userOpHash: ${userOpHash}`);
         
-        const updateResponse = await fetch(`/api/update-join/${joinData.mealId}`, {
-          method: 'PATCH',
+        const verifyResponse = await fetch('/api/verify-transaction', {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            guestId: joinData.guestId,
-            transactionId: txId,
-          }),
+          body: JSON.stringify({ userOpHash }),
         });
 
-        addLog(`Update response status: ${updateResponse.status}`);
-        const updateText = await updateResponse.text();
-        addLog(`Update response text: ${updateText.substring(0, 200)}`);
-        
-        let updateData;
-        try {
-          updateData = JSON.parse(updateText);
-        } catch (e) {
-          throw new Error(`Failed to parse update response: ${updateText.substring(0, 200)}`);
-        }
-        
-        if (updateData.success) {
-          addLog('✅ STEP 3 COMPLETE: Join transaction recorded!');
+        addLog(`Verification response status: ${verifyResponse.status}`);
+        const verifyData = await verifyResponse.json();
+        addLog(`Verification response: ${JSON.stringify(verifyData)}`);
+
+        if (verifyData.success && verifyData.status === 'confirmed') {
+          addLog('✅ STEP 2 COMPLETE: Transaction confirmed on-chain!');
+          addLog(`Transaction hash: ${verifyData.transactionHash}`);
+          
+          // STEP 3: NOW add guest to database with confirmed transaction ID
+          addLog('⏳ STEP 3: Saving guest to database with confirmed transaction...');
+          
+          const dbPayload = {
+            mealId: joinData.mealId,
+            userId: joinData.guestId,
+            username: joinData.guestUsername,
+            transactionId: verifyData.transactionHash,  // Use real confirmed transaction hash
+          };
+
+          console.log('[TRANSACTION] Saving guest with confirmed transaction:', dbPayload);
+          addLog('Sending to /api/join-meal...');
+          
+          const dbResponse = await fetch('/api/join-meal', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dbPayload),
+          });
+
+          addLog(`Database response status: ${dbResponse.status}`);
+          const dbData = await dbResponse.json();
+          addLog(`Database response received: ${JSON.stringify(dbData)}`);
+          
+          if (!dbData.success) {
+            addLog(`❌ STEP 3 FAILED: Database response error`);
+            throw new Error(dbData.error || 'Failed to join meal in database');
+          }
+
+          addLog(`✅ STEP 3 COMPLETE: Guest added to meal with confirmed transaction`);
+          addLog(`📝 Database response: ${JSON.stringify(dbData)}`);
           
           // STEP 4: Send chat message to host
           addLog('⏳ STEP 4: Sending notification chat to host...');
@@ -519,17 +511,17 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
 
           addLog('✅✅✅ ALL STEPS COMPLETE - SUCCESSFULLY JOINED MEAL! ✅✅✅');
           setButtonState('success');
-          setTxHash(txId);
+          setTxHash(verifyData.transactionHash);
           
           if (onMealJoined) {
             onMealJoined(joinData.mealId);
           }
         } else {
-          throw new Error(updateData.error || 'Failed to update join with transaction ID');
+          throw new Error(verifyData.error || 'Transaction verification failed');
         }
 
       } else if (status === 'error') {
-        addLog(`❌ STEP 2 FAILED: ${data?.error}`);
+        addLog(`❌ STEP 1 FAILED: ${data?.error}`);
         setButtonState('failed');
         setDemoError(data?.error || 'Transaction failed');
         setTimeout(() => router.push('/?tab=browse'), 1000);
