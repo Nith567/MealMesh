@@ -67,48 +67,8 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
       setButtonState('pending');
       setStepLogs([]);
 
-      // STEP 1: Save meal to database FIRST to get real mealId
-      addLog('⏳ STEP 1: Saving meal to database...');
-      
-      const dbPayload = {
-        hostId: mealData.hostId,
-        hostUsername: mealData.hostUsername,
-        hostAddress: mealData.hostAddress,
-        restaurant: mealData.restaurant,
-        city: mealData.city,
-        country: mealData.country,
-        latitude: mealData.latitude,
-        longitude: mealData.longitude,
-        date: mealData.date_str,
-        time: mealData.time_str,
-        cuisine: mealData.cuisine,
-        description: mealData.description,
-        maxGuests: mealData.maxGuests,
-        stakeAmount: 0,
-      };
-
-      addLog('Sending to /api/create-meal...');
-      const dbResponse = await fetch('/api/create-meal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dbPayload),
-      });
-
-      addLog(`Database response status: ${dbResponse.status}`);
-      const dbData = await dbResponse.json();
-      addLog(`Database response received: ${JSON.stringify(dbData)}`);
-      
-      if (!dbData.success || !dbData.meal) {
-        addLog(`❌ STEP 1 FAILED: Database response error`);
-        throw new Error(dbData.error || 'Failed to save meal to database');
-      }
-
-      const realMealId = dbData.meal.id;
-      addLog(`✅ STEP 1 COMPLETE: Meal saved with ID: ${realMealId}`);
-      addLog(`📝 Database meal object: ${JSON.stringify(dbData.meal)}`);
-
-      // STEP 2: Call smart contract with real mealId
-      addLog('⏳ STEP 2: Calling smart contract with real meal ID...');
+      // STEP 1: Call smart contract first to get userOpHash
+      addLog('⏳ STEP 1: Calling smart contract to create meal...');
       
       const username = session?.user?.username;
       if (!username) {
@@ -132,11 +92,13 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
         deadline: Math.floor((Date.now() + 30 * 60 * 1000) / 1000).toString(),
       };
 
+      // Generate a temporary meal ID for the smart contract call
+      const tempMealId = `meal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       addLog('Sending createMeal() to smart contract...');
-      addLog(`Real meal ID: ${realMealId}`);
+      addLog(`Temporary meal ID for contract: ${tempMealId}`);
       addLog(`Meal date: ${mealData.date}`);
 
-      // Call smart contract with REAL meal ID from database
+      // Call smart contract with temporary meal ID
       addLog('⏳ Calling smart contract...');
       console.log('[TRANSACTION] About to call sendTransaction');
       
@@ -147,8 +109,8 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
             abi: MealMeshABI,
             functionName: 'createMeal',
             args: [
-              realMealId,  // ✅ REAL meal ID from database
-              mealData.date,  // ✅ Real meal timestamp
+              tempMealId,  // Temporary ID for contract
+              mealData.date,  // Real meal timestamp
               [
                 [permitTransfer.permitted.token, permitTransfer.permitted.amount],
                 permitTransfer.nonce,
@@ -180,11 +142,11 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
       addLog(`Status: ${status}, UserOpHash: ${userOpHash}`);
 
       if (status === 'success' && userOpHash) {
-        addLog('✅ STEP 2 COMPLETE: Transaction sent to chain!');
+        addLog('✅ STEP 1 COMPLETE: Transaction sent to chain!');
         addLog(`UserOpHash: ${userOpHash}`);
         
-        // STEP 3: Verify transaction is confirmed on-chain
-        addLog('⏳ STEP 3: Verifying transaction confirmation...');
+        // STEP 2: Verify transaction is confirmed on-chain
+        addLog('⏳ STEP 2: Verifying transaction confirmation...');
         addLog(`Polling World API for userOpHash: ${userOpHash}`);
         
         const verifyResponse = await fetch('/api/verify-transaction', {
@@ -198,53 +160,79 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
         addLog(`Verification response: ${JSON.stringify(verifyData)}`);
 
         if (verifyData.success && verifyData.status === 'confirmed') {
-          addLog('✅ STEP 3 COMPLETE: Transaction confirmed on-chain!');
+          addLog('✅ STEP 2 COMPLETE: Transaction confirmed on-chain!');
           addLog(`Transaction hash: ${verifyData.transactionHash}`);
           
-          // STEP 4: Update database with confirmed transaction hash
-          addLog('⏳ STEP 4: Updating database with confirmed transaction hash...');
+          // STEP 3: NOW save meal to database with confirmed transaction hash
+          addLog('⏳ STEP 3: Saving meal to database with confirmed transaction...');
           
-          const updateResponse = await fetch(`/api/update-meal/${realMealId}`, {
-            method: 'PATCH',
+          const dbPayload = {
+            hostId: mealData.hostId,
+            hostUsername: mealData.hostUsername,
+            hostAddress: mealData.hostAddress,
+            restaurant: mealData.restaurant,
+            city: mealData.city,
+            country: mealData.country,
+            latitude: mealData.latitude,
+            longitude: mealData.longitude,
+            date: mealData.date_str,
+            time: mealData.time_str,
+            cuisine: mealData.cuisine,
+            description: mealData.description,
+            maxGuests: mealData.maxGuests,
+            stakeAmount: 0,
+            transactionId: verifyData.transactionHash,  // Confirmed transaction hash
+          };
+
+          addLog('Sending to /api/create-meal...');
+          const dbResponse = await fetch('/api/create-meal', {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ transactionId: verifyData.transactionHash }),
+            body: JSON.stringify(dbPayload),
           });
 
-          addLog(`Update response status: ${updateResponse.status}`);
-          const updateText = await updateResponse.text();
-          addLog(`Update response text: ${updateText.substring(0, 200)}`);
+          addLog(`Database response status: ${dbResponse.status}`);
+          const dbData = await dbResponse.json();
+          addLog(`Database response received: ${JSON.stringify(dbData)}`);
           
-          let updateData;
-          try {
-            updateData = JSON.parse(updateText);
-          } catch (e) {
-            throw new Error(`Failed to parse update response: ${updateText.substring(0, 200)}`);
+          if (!dbData.success || !dbData.meal) {
+            addLog(`❌ STEP 3 FAILED: Database response error`);
+            throw new Error(dbData.error || 'Failed to save meal to database');
           }
+
+          const realMealId = dbData.meal.id;
+          addLog(`✅ STEP 3 COMPLETE: Meal saved with ID: ${realMealId}`);
+          addLog(`📝 Database meal object: ${JSON.stringify(dbData.meal)}`);
+          addLog('✅✅✅ ALL STEPS COMPLETE - MEAL CREATION SUCCESSFUL! ✅✅✅');
+          setButtonState('success');
+          setTxHash(verifyData.transactionHash);
           
-          if (updateData.success || updateData.meal) {
-            addLog('✅ STEP 4 COMPLETE: Meal updated with confirmed transaction hash!');
-            addLog('✅✅✅ ALL STEPS COMPLETE - MEAL CREATION SUCCESSFUL! ✅✅✅');
-            setButtonState('success');
-            setTxHash(verifyData.transactionHash);
-            
-            // Dispatch success event for CreateMeal component
-            window.dispatchEvent(new CustomEvent('mealCreatedSuccess', { detail: { mealId: realMealId } }));
-            
-            if (onMealCreated) {
-              onMealCreated(realMealId);
-            }
-          } else {
-            throw new Error(updateData.error || 'Failed to update meal with transaction hash');
+          // Dispatch success event for CreateMeal component
+          window.dispatchEvent(new CustomEvent('mealCreatedSuccess', { detail: { mealId: realMealId } }));
+          
+          if (onMealCreated) {
+            onMealCreated(realMealId);
           }
         } else {
           throw new Error(verifyData.error || 'Transaction verification failed');
         }
 
       } else if (status === 'error') {
-        addLog(`❌ STEP 2 FAILED: ${data?.error}`);
+        addLog(`❌ STEP 1 FAILED: ${data?.error}`);
         setButtonState('failed');
         setDemoError(data?.error || 'Transaction failed');
-        setTimeout(() => router.push('/?tab=home'), 1000);
+        
+        // Show error toast
+        toast.error({
+          title: '❌ Transaction Failed',
+          description: data?.error || 'Transaction failed',
+          duration: 4000,
+        });
+        
+        // Reset button state after 3 seconds
+        setTimeout(() => {
+          setButtonState(undefined);
+        }, 3000);
 
       } else {
         throw new Error(`Unexpected status: ${status}`);
@@ -261,6 +249,11 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
         description: errorMsg,
         duration: 4000,
       });
+      
+      // Reset button state after 3 seconds so user can retry
+      setTimeout(() => {
+        setButtonState(undefined);
+      }, 3000);
     } finally {
       // Safety net — if somehow buttonState never updated
       setButtonState(prev => prev === 'pending' ? 'failed' : prev);
@@ -552,7 +545,18 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
         addLog(`❌ STEP 1 FAILED: ${data?.error}`);
         setButtonState('failed');
         setDemoError(data?.error || 'Transaction failed');
-        setTimeout(() => router.push('/?tab=browse'), 1000);
+        
+        // Show error toast
+        toast.error({
+          title: '❌ Transaction Failed',
+          description: data?.error || 'Transaction failed',
+          duration: 4000,
+        });
+        
+        // Reset button state after 3 seconds
+        setTimeout(() => {
+          setButtonState(undefined);
+        }, 3000);
 
       } else {
         throw new Error(`Unexpected status: ${status}`);
@@ -569,6 +573,11 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
         description: errorMsg,
         duration: 4000,
       });
+      
+      // Reset button state after 3 seconds so user can retry
+      setTimeout(() => {
+        setButtonState(undefined);
+      }, 3000);
     } finally {
       // Safety net — if somehow buttonState never updated
       setButtonState(prev => prev === 'pending' ? 'failed' : prev);
