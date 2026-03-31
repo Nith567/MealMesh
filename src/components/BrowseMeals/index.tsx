@@ -391,6 +391,11 @@ function MealCard({
               <Chip variant="warning" label={`${meal.availableSeats} left`} />
             )}
           </div>
+          {meal.description && (
+            <Typography variant="body" level={4} className="text-gray-600 text-sm mt-2 line-clamp-2">
+              {meal.description}
+            </Typography>
+          )}
         </div>
 
         {/* Distance badge */}
