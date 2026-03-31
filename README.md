@@ -112,6 +112,32 @@ The timing is perfect. Traditional apps have trained users to pay $20-150 per me
 3. Users save so much money they'll eagerly pay for premium features
 4. On-chain transparency = users trust the model and adoption accelerates
 
+## 🏆 Challenge Tracks
+
+MealMesh is applying to **2 official World Build 3 challenge tracks**:
+
+### **Track 1: Fresh Code**
+MealMesh represents a completely fresh approach to social dining — built from scratch with World ID verification at its core. Every architectural decision prioritizes human verification, transparency, and trustlessness. This is not a clone of existing platforms; it's a fundamentally different model enabled by blockchain and World ID.
+
+**Why Fresh Code?**
+- ✅ Novel use of World ID (every user cryptographically verified as human)
+- ✅ On-chain meal marketplace (first-of-its-kind decentralized social dining)
+- ✅ Innovative payment model (0.001 WLD platform fee vs $20-150 competitors)
+- ✅ Original smart contract architecture (Permit2 gas-less payments, on-chain reputation)
+- ✅ Unique integration (World Chat + Worldchain + location-based discovery)
+
+### **Track 2: World Build 3: The Human-Centric App Challenge**
+MealMesh is fundamentally human-centric — it's impossible to use without World ID verification. Every single user is cryptographically proven to be human. The entire business model is built on the premise that humans want to connect with other verified humans.
+
+**Why Human-Centric?**
+- ✅ **Proof of Humanity**: World ID verification is mandatory, not optional. No fake profiles, no bots, no catfishing.
+- ✅ **Human Trust**: Users know exactly who they're meeting because everyone is verified. This is the core value proposition.
+- ✅ **Decentralized Human Network**: No algorithm deciding who you meet — you choose based on real information about real people.
+- ✅ **Human-First Features**: World Chat integration, instant messaging, reputation tracking for real humans.
+- ✅ **Human Scaling**: The platform only works if humans use it. Success = network of verified humans finding each other.
+
+**Core Challenge Solved**: How do you build a social app where trust is guaranteed? Answer: Make every user prove they're human first. MealMesh leverages World ID to solve the trust problem that plagues all existing social dining apps.
+
 ## Getting Started
 
 1. cp .env.example .env.local
