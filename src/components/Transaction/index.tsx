@@ -501,36 +501,35 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
           addLog(`✅ STEP 3 COMPLETE: Guest added to meal with confirmed transaction`);
           addLog(`📝 Database response: ${JSON.stringify(dbData)}`);
           
-          // STEP 4: Send chat message to host (with 1.5 second delay)
-          addLog('⏳ STEP 4: Opening chat with host in 1.5 seconds...');
           
           // Wait 1.5 seconds before opening chat for better UX
-          await new Promise(r => setTimeout(r, 1500));
+          await new Promise(r => setTimeout(r, 700));
           
           try {
-            addLog(`📱 Opening chat window with host: ${joinData.hostUsername}`);
+            addLog(`📱 Sending chat message to host: ${joinData.hostUsername}`);
             
-            // Open World profile chat link - works regardless of MiniKit installation
-            window.open(
-              `https://world.org/profile?username=${joinData.hostUsername}&action=chat`,
-              '_blank'
-            );
+            // Use MiniKit.chat() to send a direct message to the host
+            const result = await (MiniKit as any).chat({
+              message: `Hey! 👋 I just joined your meal!\n\n🍽️ Restaurant: ${joinData.restaurant}\n📅 Date: ${joinData.date}\n⏰ Time: ${joinData.time}\n\nLooking forward to meeting you! 😊`,
+              to: [joinData.hostUsername],
+            });
 
-            addLog('✅ STEP 4 COMPLETE: Chat window opened to host!');
+            addLog('✅ STEP 4 COMPLETE: Chat message sent to host!');
+            addLog(`Message result: ${JSON.stringify(result)}`);
             
             // Show success toast
             toast.success({
               title: '✅ Successfully Joined Meal!',
-              description: `You've joined the meal at ${joinData.restaurant}. Chat window opened to host!`,
+              description: `You've joined the meal at ${joinData.restaurant}. Message sent to host!`,
               duration: 4000,
             });
           } catch (chatError) {
             console.error('[TRANSACTION] Chat error:', chatError);
-            addLog('⚠️ STEP 4 WARNING: Chat error, but meal join was successful');
+            addLog('⚠️ STEP 4 WARNING: Chat message failed, but meal join was successful');
             // Still show success even if chat fails
             toast.success({
               title: '✅ Successfully Joined Meal!',
-              description: `You've joined the meal at ${joinData.restaurant}. You can find the host in your messages!`,
+              description: `You've joined the meal at ${joinData.restaurant}. You can message the host from your chat!`,
               duration: 4000,
             });
           }
@@ -561,7 +560,7 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
         // Reset button state after 3 seconds
         setTimeout(() => {
           setButtonState(undefined);
-        }, 3000);
+        }, 1000);
 
       } else {
         throw new Error(`Unexpected status: ${status}`);
@@ -582,7 +581,7 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
       // Reset button state after 3 seconds so user can retry
       setTimeout(() => {
         setButtonState(undefined);
-      }, 3000);
+      }, 1500);
     } finally {
       // Safety net — if somehow buttonState never updated
       setButtonState(prev => prev === 'pending' ? 'failed' : prev);
