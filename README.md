@@ -4,6 +4,9 @@
 
 MealMesh is a decentralized meal marketplace that reimagines social dining. Every user is World ID verified, every transaction is on-chain, and you control who you meet — not an algorithm.
 
+
+<img width="350" height="350" alt="image" src="https://github.com/user-attachments/assets/8e99bc4f-4cc9-42b4-ada0-fe4664353c3d" />
+
 ## The Problem We're Solving
 
 Social dining apps promise genuine human connection but deliver the opposite:
@@ -138,6 +141,10 @@ MealMesh is fundamentally human-centric — it's impossible to use without World
 
 **Core Challenge Solved**: How do you build a social app where trust is guaranteed? Answer: Make every user prove they're human first. MealMesh leverages World ID to solve the trust problem that plagues all existing social dining apps.
 
+
+
+
+
 ## Getting Started
 
 1. cp .env.example .env.local
@@ -157,11 +164,3 @@ This starter kit uses [Minikit's](https://github.com/worldcoin/minikit-js) walle
 ## UI Library
 
 This starter kit uses [Mini Apps UI Kit](https://github.com/worldcoin/mini-apps-ui-kit) to style the app. We recommend using the UI kit to make sure you are compliant with [World App's design system](https://docs.world.org/mini-apps/design/app-guidelines).
-
-## Eruda
-
-[Eruda](https://github.com/liriliri/eruda) is a tool that allows you to inspect the console while building as a mini app. You should disable this in production.
-
-## Contributing
-
-This template was made with help from the amazing [supercorp-ai](https://github.com/supercorp-ai) team.
