@@ -180,7 +180,7 @@ export const Transaction = ({ mealData, onMealCreated, onMealJoined }: { mealDat
             cuisine: mealData.cuisine,
             description: mealData.description,
             maxGuests: mealData.maxGuests,
-            stakeAmount: 0,
+            contractMealId: tempMealId,  // ✅ CRITICAL: Pass the blockchain mealId
             transactionId: verifyData.transactionHash,  // Confirmed transaction hash
           };
 

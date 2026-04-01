@@ -93,15 +93,23 @@ export async function POST(req: NextRequest) {
     console.log('[CREATE-MEAL] ✅ User verified. Proceeding with meal creation...');
     console.log('[CREATE-MEAL] User ID from database:', user.id);
 
-    // Create meal
-    console.log('[CREATE-MEAL] Creating meal:', restaurant);
-    const mealId = createId();
+    // CRITICAL: Use contractMealId from blockchain, NOT a new generated ID
+    // This ensures blockchain and DB have the SAME mealId
+    if (!contractMealId) {
+      console.error('[CREATE-MEAL] contractMealId (from blockchain) not provided');
+      return NextResponse.json(
+        { error: 'contractMealId from blockchain is required. Transaction must be confirmed on-chain first.' },
+        { status: 400 }
+      );
+    }
+
+    console.log('[CREATE-MEAL] Creating meal with blockchain mealId:', contractMealId);
     
     const { data: newMeal, error: createError } = await supabase
       .from('Meal')
       .insert([
         {
-          id: mealId,
+          id: contractMealId, // ✅ USE BLOCKCHAIN mealId as primary ID
           hostId: user.id, // Use the actual user ID from database, not username
           hostUsername,
           hostAddress: hostAddress || null,
@@ -118,7 +126,6 @@ export async function POST(req: NextRequest) {
           maxGuests,
           currentGuests: 0, // Host doesn't count as guest
           stakeAmount: 0, // No stake required
-          contractMealId: contractMealId || null,
           transactionId: transactionId || null,
           updatedAt: new Date().toISOString(),
         },
